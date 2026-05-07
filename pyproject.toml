@@ -1,0 +1,103 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "vectorscry-train"
+version = "0.1.0"
+description = "PyTorch training pipeline and .vse weight format writer for vectorscry-embedding"
+# 3.10 is the honest floor: train.py's dataclasses with PEP 604 unions
+# (`int | None`) get evaluated at class construction time, not just at
+# type-check time, so `from __future__ import annotations` doesn't
+# rescue 3.9.
+requires-python = ">=3.10"
+license = { text = "Proprietary" }
+authors = [
+    { name = "vectorscry" },
+]
+keywords = ["embeddings", "distillation", "vectorscry", "stm32", "edge-ml"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+# Hard runtime dependencies. Anything imported by the package itself
+# at import time or in normal use belongs here. Eval-only deps go in
+# the [project.optional-dependencies] table below.
+#
+# Pins are deliberately loose: torch 2.0 introduced the API we use
+# (F.gelu, F.normalize, F.cross_entropy on logits) and nothing newer
+# is required. Numpy 1.21 is when `np.dtype` stopped warning on the
+# `<f4` byte-order strings we use in the .vse writer; older versions
+# would also work but aren't worth supporting.
+dependencies = [
+    "torch>=2.0",
+    "numpy>=1.21",
+]
+
+[project.optional-dependencies]
+# Dependencies needed only to run distill_eval_trec.py. The training
+# pipeline itself doesn't need these — a caller using vectorscry-train
+# in production would supply teacher embeddings from their own pipeline.
+eval = [
+    "sentence-transformers>=2.0",
+    "datasets>=2.0",
+    "scipy>=1.7",
+]
+# Lint/test/dev tooling. Kept separate so `pip install vectorscry-train[eval]`
+# doesn't pull in pytest etc.
+dev = [
+    "pytest>=7.0",
+    "ruff>=0.1",
+]
+
+[project.urls]
+# Fill these in when the repos are public.
+# Homepage = "https://github.com/.../vectorscry"
+# Repository = "https://github.com/.../vectorscry"
+
+# Hatchling needs to know which directory holds the package source when
+# the layout is flat (package dir name == project name with hyphens
+# replaced by underscores). Spelling it out explicitly is more robust
+# than relying on auto-detection across hatchling versions.
+[tool.hatch.build.targets.wheel]
+packages = ["vectorscry_train"]
+
+[tool.hatch.build.targets.sdist]
+# Include only the package itself plus README/license in source dists.
+# distill_eval_trec.py is an example, not part of the package — it
+# ships separately under examples/ in the repo but doesn't need to be
+# in the sdist.
+include = [
+    "vectorscry_train/",
+    "README.md",
+]
+
+# ---------------------------------------------------------------------------
+# Tooling configuration. Kept in pyproject.toml so a fresh checkout has
+# everything it needs without per-tool config files cluttering the repo.
+# ---------------------------------------------------------------------------
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+# Conservative starting set: pycodestyle errors + pyflakes (defaults),
+# plus import sorting. Add more rules as the codebase stabilizes.
+select = ["E", "F", "I"]
+# F401 (unused import) is too noisy in __init__.py where re-exports are
+# the whole point. Per-file ignores rather than blanket disable.
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+"vectorscry_train/__init__.py" = ["F401"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]

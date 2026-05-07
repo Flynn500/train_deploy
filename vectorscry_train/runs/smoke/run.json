@@ -1,0 +1,9 @@
+{
+  "n": 1000,
+  "seed": 0,
+  "epochs": 1,
+  "batch_size": 32,
+  "lr": 0.001,
+  "device": null,
+  "smoke_test": true
+}

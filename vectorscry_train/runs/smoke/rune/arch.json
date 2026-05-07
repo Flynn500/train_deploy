@@ -1,0 +1,10 @@
+{
+  "hidden_dim": 64,
+  "student_dim": 64,
+  "mlp_hidden": [],
+  "max_seq_len": 256,
+  "kernel_size": 5,
+  "num_blocks": 2,
+  "pooling": "mean",
+  "has_tokenizer": false
+}
